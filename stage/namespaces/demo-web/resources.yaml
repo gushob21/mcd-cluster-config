@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: demo-web
+    role: backend
+  name: demo-web-app
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: demo-web
+    role: backend
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: demo-web
+    role: backend
+  name: demo-web-app
+spec:
+  selector:
+    matchLabels:
+      app: demo-web
+      role: backend
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: demo-web
+        role: backend
+      name: app
+    spec:
+      containers:
+      - env:
+        - name: ENVIRONMENT
+          value: dev
+        - name: LOG_LEVEL
+          value: info
+        image: gcr.io/clouddeploy-324720/demo-web:23fad55@sha256:9a45b170979c00a9ce3ec1b90bd58fce0c151010298a8cbbcbf5381cbe3bd14e
+        name: app
+        ports:
+        - containerPort: 8080
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 1
+          periodSeconds: 1
+        resources:
+          limits:
+            cpu: 100m
+            memory: 256Mi
+          requests:
+            cpu: 25m
+            memory: 64Mi
