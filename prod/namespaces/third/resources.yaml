@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: third
+    role: backend
+  name: third-app
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: third
+    role: backend
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: third
+    role: backend
+  name: third-app
+spec:
+  selector:
+    matchLabels:
+      app: third
+      role: backend
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: third
+        role: backend
+      name: app
+    spec:
+      containers:
+      - env:
+        - name: ENVIRONMENT
+          value: dev
+        - name: LOG_LEVEL
+          value: info
+        image: gcr.io/clouddeploy-1/third:v1@sha256:fd5edce705c0210a1bfb338449beea5e3632aadf4026e13d3ec531059ba121de
+        name: app
+        ports:
+        - containerPort: 8080
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 1
+          periodSeconds: 1
+        resources:
+          limits:
+            cpu: 100m
+            memory: 256Mi
+          requests:
+            cpu: 25m
+            memory: 64Mi
