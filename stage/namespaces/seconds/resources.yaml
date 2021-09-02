@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: seconds
+    role: backend
+  name: seconds-app
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: seconds
+    role: backend
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: seconds
+    role: backend
+  name: seconds-app
+spec:
+  selector:
+    matchLabels:
+      app: seconds
+      role: backend
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: seconds
+        role: backend
+      name: app
+    spec:
+      containers:
+      - env:
+        - name: ENVIRONMENT
+          value: dev
+        - name: LOG_LEVEL
+          value: info
+        image: gcr.io/clouddeploy-1/seconds:8ce94ea@sha256:9674a6368c147b71122bb048c7eb9fb4e7b3cb4e7dff49014434032e5c74dbbe
+        name: app
+        ports:
+        - containerPort: 8080
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 1
+          periodSeconds: 1
+        resources:
+          limits:
+            cpu: 100m
+            memory: 256Mi
+          requests:
+            cpu: 25m
+            memory: 64Mi
